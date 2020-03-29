@@ -60,11 +60,14 @@ import org.terasology.structureTemplates.components.BlockRegionTransformComponen
 import org.terasology.structureTemplates.components.FallingBlocksPlacementAlgorithmComponent;
 import org.terasology.structureTemplates.components.SpawnStructureActionComponent;
 import org.terasology.structureTemplates.components.StructureTemplateComponent;
+import org.terasology.structureTemplates.events.SpawnBlocksOfStructureTemplateEvent;
 import org.terasology.structureTemplates.events.SpawnStructureEvent;
 import org.terasology.structureTemplates.events.StructureBlocksSpawnedEvent;
 import org.terasology.structureTemplates.internal.systems.StructureSpawnServerSystem;
 import org.terasology.structureTemplates.util.BlockRegionTransform;
 import org.terasology.world.WorldComponent;
+import org.terasology.world.WorldProvider;
+import org.terasology.world.block.Block;
 import org.terasology.world.chunks.event.PurgeWorldEvent;
 
 /**
@@ -82,7 +85,8 @@ public class PlayerTracker extends BaseComponentSystem {
     private PrefabManager prefabManager;
     @In
     private NetworkSystem networkSystem;
-
+    @In
+    private WorldProvider worldProvider;
     @In
     private Console console;
 
@@ -166,59 +170,15 @@ public class PlayerTracker extends BaseComponentSystem {
 
 
         Prefab prefab = prefabManager.getPrefab("StaticCities:well");
-//        EntityBuilder entityBuilder = entityManager.newBuilder(prefab);
-//        LocationComponent loc=new LocationComponent();
-//        loc.setWorldPosition(client.getEntity().getComponent(LocationComponent.class).getWorldPosition());
-//        entityBuilder.addComponent(loc);
-//        entityBuilder.addComponent(new SpawnStructureActionComponent());
-//        EntityRef entityRef = entityBuilder.build();
-//
-//        entityManager.create(entityRef.iterateComponents());
-////        entityRef.send(new StructureBlocksSpawnedEvent(BlockRegionTransform.createFromComponent(prefab.getComponent(BlockRegionTransformComponent.class))));
         EntityBuilder entityBuilder = entityManager.newBuilder(prefab);
-//        ItemComponent itemComponent = entityBuilder.getComponent(ItemComponent.class);
-//        if (itemComponent == null) {
-//            itemComponent = new ItemComponent();
-//        }
-//        Optional<TextureRegionAsset> optionalIcon = assetManager.getAsset("engine:items#whiteRecipe", TextureRegionAsset.class);
-//        itemComponent.icon = optionalIcon.get();
-//        itemComponent.damageType = assetManager.getAsset("engine:physicalDamage", Prefab.class).get();
-//        itemComponent.pickupPrefab = assetManager.getAsset("engine:itemPickup", Prefab.class).get();
-//        entityBuilder.addOrSaveComponent(itemComponent);
-//        DisplayNameComponent displayNameComponent = entityBuilder.getComponent(DisplayNameComponent.class);
-//        if (displayNameComponent == null) {
-//            displayNameComponent = new DisplayNameComponent();
-//        }
-
-//        displayNameComponent.name =  prefab.getName() + " Spawner";
-//        entityBuilder.addOrSaveComponent(displayNameComponent);
-//        entityBuilder.addOrSaveComponent(new SpawnStructureActionComponent());
-        // TODO make this optional
-//        entityBuilder.addOrSaveComponent(new FallingBlocksPlacementAlgorithmComponent());
-//        entityBuilder.addOrSaveComponent(new NetworkComponent());
-        logger.debug(entityBuilder.toString());
         EntityRef item = entityBuilder.build();
-        logger.debug(item.toFullDescription());
-//        item.send(new ActivateEvent(new ActivationRequest()));
-
-        LocationComponent characterLocation = client.getEntity().getComponent(LocationComponent.class);
-//        Vector3f directionVector = characterLocation.getWorldDirection();
-//
-//        Side facedDirection = Side.inHorizontalDirection(directionVector.getX(), directionVector.getZ());
-//        Side wantedFrontOfStructure = facedDirection.reverse();
-//        BlockRegionTransform b = BlockRegionTransform.createRotationThenMovement(Side.TOP, Side.BOTTOM,new Vector3i(characterLocation.getWorldPosition().x+1,characterLocation.getWorldPosition().y-1,characterLocation.getWorldPosition().z+1 ));
-        item.send(new SpawnStructureEvent(BlockRegionTransform.getTransformationThatDoesNothing()));
-//        entity.send(onItemUseEvent);
-//        giveItemToOwnerOrDestroyItem(item, entity);
+        Block block=new Block();
+        block.setGrass(true);
+        worldProvider.setBlock(new Vector3i(client.getEntity().getComponent(LocationComponent.class).getWorldPosition()),block);
+        BlockRegionTransform b = BlockRegionTransform.createRotationThenMovement(Side.FRONT, Side.FRONT,new Vector3i(client.getEntity().getComponent(LocationComponent.class).getWorldPosition()));
+        item.send(new SpawnStructureEvent(b));
 
 
-    }
-    void giveItemToOwnerOrDestroyItem(EntityRef item, EntityRef owner) {
-        GiveItemEvent giveItemEvent = new GiveItemEvent(owner);
-        item.send(giveItemEvent);
-        if (!giveItemEvent.isHandled()) {
-            item.destroy();
-        }
     }
     /**
      * Called whenever a named area is entered
